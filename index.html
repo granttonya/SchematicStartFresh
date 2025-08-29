@@ -238,6 +238,16 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
       </div>
 
       <div>
+        <h2>Cleanup</h2>
+        <div class="row"><label for="cleanRad">Radius</label><output id="cleanRadVal">1</output></div>
+        <input id="cleanRad" type="range" min="1" max="5" value="1" step="1">
+        <div class="row" style="grid-template-columns:auto auto 1fr; gap:8px;">
+          <button id="cleanupBtn">Apply Cleanup</button>
+          <div class="hint">Removes small specks and smooths lines.</div>
+        </div>
+      </div>
+
+      <div>
         <h2>Performance</h2>
         <label class="inline"><input type="checkbox" id="autoDown" checked> Auto‑downscale large images</label>
         <div class="row"><label for="maxDim">Max dimension (px)</label><output id="maxDimVal">4096</output></div>
@@ -366,6 +376,10 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
     const downloadBtn = document.getElementById('download');
     const meta = document.getElementById('meta');
 
+    const cleanRad = document.getElementById('cleanRad');
+    const cleanRadVal = document.getElementById('cleanRadVal');
+    const cleanupBtn = document.getElementById('cleanupBtn');
+
     // Text UI
     const textModeBtn = document.getElementById('textMode');
     const labelColor = document.getElementById('labelColor');
@@ -382,6 +396,9 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
     limit.addEventListener('input', () => limitVal.textContent = limit.value);
     maxDim.addEventListener('input', () => maxDimVal.textContent = maxDim.value);
     zoom.addEventListener('input', () => { zoomVal.textContent = zoom.value + '%'; drawBase(); redrawOverlay(); });
+
+    cleanRad?.addEventListener('input', () => cleanRadVal.textContent = cleanRad.value);
+    cleanupBtn?.addEventListener('click', () => applyCleanup());
 
     const normalizeStrength = document.getElementById('normalizeStrength'); const normalizeStrengthVal = document.getElementById('normalizeStrengthVal'); if (normalizeStrength && normalizeStrengthVal) normalizeStrength.addEventListener('input', ()=> normalizeStrengthVal.textContent = normalizeStrength.value + '%');
 
@@ -823,7 +840,69 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
     }
 
 
-    
+    function applyCleanup(){
+      try{
+        if (!rawImageData || !imgBitmap) return;
+        const r = Math.max(1, Math.min(5, parseInt(cleanRad.value||'1',10)));
+        const w = imgW, h = imgH;
+        const src = rawImageData.data;
+        const gray = new Uint8Array(w*h);
+        for (let i=0, j=0; i<gray.length; i++, j+=4) {
+          gray[i] = 0.299*src[j] + 0.587*src[j+1] + 0.114*src[j+2];
+        }
+        const dilate = (inp) => {
+          const out = new Uint8Array(w*h);
+          for (let y=0; y<h; y++) {
+            for (let x=0; x<w; x++) {
+              let max = 0;
+              for (let dy=-r; dy<=r; dy++) {
+                for (let dx=-r; dx<=r; dx++) {
+                  const nx=x+dx, ny=y+dy;
+                  if (nx>=0 && nx<w && ny>=0 && ny<h) {
+                    const v = inp[ny*w+nx];
+                    if (v>max) max=v;
+                  }
+                }
+              }
+              out[y*w+x]=max;
+            }
+          }
+          return out;
+        };
+        const erode = (inp) => {
+          const out = new Uint8Array(w*h);
+          for (let y=0; y<h; y++) {
+            for (let x=0; x<w; x++) {
+              let min = 255;
+              for (let dy=-r; dy<=r; dy++) {
+                for (let dx=-r; dx<=r; dx++) {
+                  const nx=x+dx, ny=y+dy;
+                  if (nx>=0 && nx<w && ny>=0 && ny<h) {
+                    const v = inp[ny*w+nx];
+                    if (v<min) min=v;
+                  }
+                }
+              }
+              out[y*w+x]=min;
+            }
+          }
+          return out;
+        };
+        let tmp = dilate(gray);
+        tmp = erode(tmp);
+        tmp = erode(tmp);
+        tmp = dilate(tmp);
+        for (let i=0, j=0; i<tmp.length; i++, j+=4) {
+          const v = tmp[i];
+          src[j] = src[j+1] = src[j+2] = v;
+        }
+        imgBitmap.getContext('2d').putImageData(rawImageData, 0, 0);
+        drawBase(); redrawOverlay();
+      }catch(e){ console.warn('applyCleanup failed', e); }
+    }
+
+
+
     // ---- Tracing core ----
     function getHighlightR(){ return Math.max(1, Math.round(+thickness.value / 2)); }
 
