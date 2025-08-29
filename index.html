@@ -387,8 +387,8 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
 
     const hvAngle = document.getElementById('hvAngle'); const hvAngleVal = document.getElementById('hvAngleVal'); if (hvAngle && hvAngleVal) hvAngle.addEventListener('input', () => hvAngleVal.textContent = hvAngle.value + '°');
 
-    labelSize.addEventListener('input', () => { labelSizeVal.textContent = labelSize.value; labelEditor.style.fontSize = labelSize.value + 'px'; });
-    textModeBtn.addEventListener('click', () => toggleTextMode());
+    labelSize?.addEventListener('input', () => { labelSizeVal.textContent = labelSize.value; labelEditor.style.fontSize = labelSize.value + 'px'; });
+    textModeBtn?.addEventListener('click', () => toggleTextMode());
 
     clearBtn.addEventListener('click', () => { overlayMask = null; if (maskCtx) maskCtx.clearRect(0,0,maskCanvas.width,maskCanvas.height); octx.clearRect(0,0,overlay.width,overlay.height); annotations = []; });
     fitBtn.addEventListener('click', () => fitToView());
@@ -664,7 +664,7 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
       const text = (labelEditor.value || '').trim();
       if (!text || !pendingEditor) return;
       const [ix, iy] = screenToImg(pendingEditor.sx, pendingEditor.sy);
-      annotations.push({ x: ix, y: iy, text, size: +labelSize.value, color: labelColor.value });
+      annotations.push({ x: ix, y: iy, text, size: +(labelSize?.value || 18), color: labelColor?.value || '#ffff00' });
       redrawOverlay();
     }
     labelEditor.addEventListener('keydown', (e) => {
@@ -760,15 +760,24 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
       splitL?.addEventListener('mousedown', e=>startDrag(e,'L'));
       splitR?.addEventListener('mousedown', e=>startDrag(e,'R'));
       splitB?.addEventListener('mousedown', e=>startDrag(e,'B'));
+    })();
 
-      // Chevron toggles in panel headers
-      document.getElementById('chevLeft')?.addEventListener('click', ()=>{ document.body.classList.toggle('left-collapsed'); setCanvasSizeToContainer?.(); });
-      document.getElementById('chevRight')?.addEventListener('click', ()=>{ document.body.classList.toggle('right-collapsed'); setCanvasSizeToContainer?.(); });
-      document.getElementById('chevBottom')?.addEventListener('click', ()=>{ document.body.classList.toggle('bottom-collapsed'); setCanvasSizeToContainer?.(); });
+    // ---- Panel chevron toggles ----
+    (function(){
+      ['Left','Right','Bottom'].forEach(pos => {
+        const cls = `${pos.toLowerCase()}-collapsed`;
+        document.getElementById(`chev${pos}`)?.addEventListener('click', () => {
+          document.body.classList.toggle(cls);
+          setCanvasSizeToContainer?.();
+        });
+        document.getElementById(`chev${pos}Edge`)?.addEventListener('click', () => {
+          document.body.classList.remove(cls);
+          setCanvasSizeToContainer?.();
+        });
+      });
     })();
 
 
-    
     // ---- Background normalization (paper whitening) ----
     
     async function normalizePaperIfEnabled(){
@@ -812,27 +821,9 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
         drawBase(); redrawOverlay();
       }catch(e){ console.warn('normalizePaperIfEnabled failed', e); }
     }
-        window.rawImageData = new ImageData(out, imgW, imgH);
-        // Update displayed bitmap
-        let disp = document.createElement('canvas'); disp.width = imgW; disp.height = imgH;
-        disp.getContext('2d').putImageData(rawImageData, 0, 0);
-        window.imgBitmap = disp;
-        drawBase(); redrawOverlay();
-      }catch(e){ console.warn('normalizePaperIfEnabled failed', e); }
-    }
 
 
     
-    // Edge chevrons to reopen collapsed panels
-    (function(){
-      document.getElementById('chevLeftEdge')?.addEventListener('click', ()=>{ document.body.classList.remove('left-collapsed'); setCanvasSizeToContainer?.(); });
-      document.getElementById('chevRightEdge')?.addEventListener('click', ()=>{ document.body.classList.remove('right-collapsed'); setCanvasSizeToContainer?.(); });
-      document.getElementById('chevBottomEdge')?.addEventListener('click', ()=>{ document.body.classList.remove('bottom-collapsed'); setCanvasSizeToContainer?.(); });
-    })();
-
-
-    
-    (function(){ const btn = document.getElementById('chevLeft'); if (btn) btn.addEventListener('click', ()=>{ document.body.classList.toggle('left-collapsed'); setCanvasSizeToContainer?.(); }); })();
     // ---- Tracing core ----
     function getHighlightR(){ return Math.max(1, Math.round(+thickness.value / 2)); }
 
