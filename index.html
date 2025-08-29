@@ -243,7 +243,11 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
         <input id="cleanRad" type="range" min="1" max="5" value="1" step="1">
         <div class="row" style="grid-template-columns:auto auto 1fr; gap:8px;">
           <button id="cleanupBtn">Apply Cleanup</button>
+codex/improve-application-design-for-schematics-uw6m6l
           <div class="hint">Binarizes image then removes specks and fills gaps.</div>
+
+          <div class="hint">Removes small specks and smooths lines.</div>
+ DevSchAStrFresh
         </div>
       </div>
 
@@ -850,8 +854,11 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
         for (let i=0, j=0; i<gray.length; i++, j+=4) {
           gray[i] = 0.299*src[j] + 0.587*src[j+1] + 0.114*src[j+2];
         }
+codex/improve-application-design-for-schematics-uw6m6l
         const thr = computeAutoThreshold(rawImageData);
         for (let i=0;i<gray.length;i++){ gray[i] = gray[i] < thr ? 0 : 255; }
+
+ DevSchAStrFresh
         const dilate = (inp) => {
           const out = new Uint8Array(w*h);
           for (let y=0; y<h; y++) {
@@ -890,10 +897,17 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
           }
           return out;
         };
+ codex/improve-application-design-for-schematics-uw6m6l
         let tmp = erode(gray);
         tmp = dilate(tmp);
         tmp = dilate(tmp);
         tmp = erode(tmp);
+
+        let tmp = dilate(gray);
+        tmp = erode(tmp);
+        tmp = erode(tmp);
+        tmp = dilate(tmp);
+ DevSchAStrFresh
         for (let i=0, j=0; i<tmp.length; i++, j+=4) {
           const v = tmp[i];
           src[j] = src[j+1] = src[j+2] = v;
