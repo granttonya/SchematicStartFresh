@@ -387,8 +387,8 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
 
     const hvAngle = document.getElementById('hvAngle'); const hvAngleVal = document.getElementById('hvAngleVal'); if (hvAngle && hvAngleVal) hvAngle.addEventListener('input', () => hvAngleVal.textContent = hvAngle.value + '°');
 
-    labelSize.addEventListener('input', () => { labelSizeVal.textContent = labelSize.value; labelEditor.style.fontSize = labelSize.value + 'px'; });
-    textModeBtn.addEventListener('click', () => toggleTextMode());
+    labelSize?.addEventListener('input', () => { labelSizeVal.textContent = labelSize.value; labelEditor.style.fontSize = labelSize.value + 'px'; });
+    textModeBtn?.addEventListener('click', () => toggleTextMode());
 
     clearBtn.addEventListener('click', () => { overlayMask = null; if (maskCtx) maskCtx.clearRect(0,0,maskCanvas.width,maskCanvas.height); octx.clearRect(0,0,overlay.width,overlay.height); annotations = []; });
     fitBtn.addEventListener('click', () => fitToView());
@@ -664,7 +664,7 @@ body.dragging-bottom #chevBottomEdge { opacity:0; pointer-events:none; }
       const text = (labelEditor.value || '').trim();
       if (!text || !pendingEditor) return;
       const [ix, iy] = screenToImg(pendingEditor.sx, pendingEditor.sy);
-      annotations.push({ x: ix, y: iy, text, size: +labelSize.value, color: labelColor.value });
+      annotations.push({ x: ix, y: iy, text, size: +(labelSize?.value || 18), color: labelColor?.value || '#ffff00' });
       redrawOverlay();
     }
     labelEditor.addEventListener('keydown', (e) => {
